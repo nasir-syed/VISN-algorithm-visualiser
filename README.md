@@ -31,7 +31,7 @@
 ---
 
 ## Project Structure
-```bash
+```text
 .
 ├── index.html 
 ├── main.js 
@@ -59,5 +59,3 @@
 
 ```bash
 git clone https://github.com/nasir-syed/VISN-algorithm-visualiser.git
-
-
