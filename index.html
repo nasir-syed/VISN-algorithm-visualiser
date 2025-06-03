@@ -1,0 +1,1173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VISN</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" integrity="sha512-XxX..." crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel='stylesheet' href='styles.css'>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <script src="./animations/animationController.js"></script>
+    <script src="./animations/animationsParent.js"></script>
+    <script src="./animations/sorting/mergeSortAnimation.js"></script>
+    <script src="./animations/sorting/quickSortAnimation.js"></script>
+    <script src="./animations/sorting/bubbleSortAnimation.js"></script>
+    <script src="./animations/sorting/insertionSortAnimation.js"></script>
+    <script src="./animations/sorting/selectionSortAnimation.js"></script>
+    <script src="./animations/searching/linearSearchAnimation.js"></script>
+    <script src="./animations/searching/binarySearchAnimation.js"></script>
+    <script src="./animations/searching/depthFirstSearchAnimation.js"></script>
+    <script src="./animations/searching/breadthFirstSearchAnimation.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/themes/prism-tomorrow.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/plugins/autoloader/prism-autoloader.min.js"></script>
+
+</head>
+<body>
+    <div id="app">
+        <!-- Main Layout -->
+        <div class="main-layout">
+            <!-- Sidebar -->
+            <div class="sidebar" :class='{collapsed: sidebarCollapsed}'id="sidebar">
+                <div class="sidebar-header" :class="{collapsed: sidebarCollapsed}" id="sidebarHeader">
+                    <button class="sidebar-icon" id="sidebarToggle"  @click="sidebarCollapsed = !sidebarCollapsed">
+                        <i class='fas' :class="sidebarCollapsed ? 'fa-bars':'fa-chevron-left'" id="sidebarIcon"></i>
+                    </button>
+                    <div class="logo" :class="{hide: sidebarCollapsed}" id="logo">VISN</div>
+                    <div class='bottom-logo' :class="{hide: !sidebarCollapsed}">
+                        <p>V</p>
+                        <p>I</p>
+                        <p>S</p>
+                        <p>N</p>
+                    </div>
+                </div>
+                <div class="sidebar-content" :class="{hide: sidebarCollapsed}" id="sidebarContent">
+                    <div class="sidebar-section" v-for="(sectionLinks, sectionName) in links" :key="sectionName">
+                        <h3 class="sidebar-heading">{{sectionName}}</h3>
+                        <ul class="sidebar-links">
+                            <li v-for="link in sectionLinks" :key="link.id"><a :class="{active: sidebarSection == link.id}" @click="sidebarSection = link.id">{{link.label}}</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <main class="main-content">
+
+                <!-- Introduction Section -->
+                <div v-if="sidebarSection === 'intro'">
+                    <div class="content-header">
+                        <h1 class="intro-title">Welcome to VISN!</h1>
+                        <p class="intro-content">Hello! VISN is an algorithm visualiser that provides dynamic animations (incorporating user input), step-by-step breakdowns, code snippets, complexity analysis and more for various algorithms! <br><br> Click on the three-stacked lines on the top left corner to explore the different sections, wishing you the best! :)  </p>
+                    </div>    
+                </div>
+
+                <div v-if="sidebarSection === 'bubble'">
+                    <div class="content-header">
+                        <h1 class="content-title">Bubble Sort</h1>
+                        <p class="content-subtitle">A comparison-based algorithm that works by repeatedly passing through the array, comparing neighbouring elements and swapping them if they are in the wrong order.
+                    </div>
+
+                    <div class="animation-container">
+                        <div class="animation-controls">
+                        <button class="control-btn" 
+                                    @click="togglePlayPause" >
+                            <i :class="animationState.isPlaying && !animationState.isPaused ? 'fas fa-pause' : 'fas fa-play'"></i>
+                            </button>
+                        <button class="control-btn" @click="resetAnimation">
+                            <i class="fas fa-redo"></i> 
+                        </button>
+                        <button class="control-btn" @click="stepBackAnimation" :disabled="animationState.isPlaying || animationState.currentStep === 0">
+                            <i class="fas fa-step-backward"></i> 
+                        </button>
+                        <button class="control-btn" @click="stepAnimation" :disabled="animationState.isPlaying">
+                            <i class="fas fa-step-forward"></i> 
+                        </button>
+                        </div>
+
+                        <div class="progress-bar">
+                        <div class="progress-fill" :style="{width: animationState.progress + '%'}"></div>
+                        </div>
+
+                        <div class="visualisation-area" id="visualArea"></div>
+
+                        <div class="step-info">
+                        <div class="step-title">{{ animationState.stepTitle }}</div>
+                        <div class="step-description">{{ animationState.stepDescription }}</div>
+                        </div>
+                    </div>
+
+                    <div class="input-wrapper">
+                        <div class="user-inputs">
+                            <input v-for="(val, index) in userInputs"
+                                :key="index"
+                                v-model="userInputs[index]"
+                                @input="handleInput(index)"
+                                type="text"
+                                maxlength="3"
+                                class="user-box"
+                                placeholder="0" />
+                        </div>
+                        <button class="control-btn" @click="submitUserInput">Submit</button>
+                    </div>
+
+                    <div class="algorithm-code">
+                        <div class="code-header">
+                            <span class="code-language">Python Implementation</span>
+                        </div>
+                        <pre><code class="language-python">def bubble_sort(arr):
+    n = len(arr)
+
+    # traverse through all array elements
+    for i in range(n):
+        swapped = False
+        
+        for j in range(0, n - i - 1):
+            
+            # Swap if the element found is greater than the next element
+            if arr[j] > arr[j + 1]:
+                arr[j], arr[j + 1] = arr[j + 1], arr[j]
+                swapped = True
+        
+        # if no swapping occurred, then array is sorted (yay)
+        if not swapped:
+            break
+
+    return arr
+
+
+    numbers = [83, 41, 24, 3, 12, 11, 95, 5]
+    sorted_numbers = bubble_sort(numbers.copy())
+    print(f"Original: {numbers}")
+    print(f"Sorted: {sorted_numbers}")</code></pre>
+                    </div>
+
+                    <div class="content-section">
+                        <h2 class="section-title">Key Steps</h2>
+                        <p class="section-content">
+                            <strong>1. Compare Neighbours:</strong> Start at the beginning and compare each pair of adjacent/neighbouring elements.<br>
+                            <strong>2. Swap if Needed:</strong> If the left element is greater than the right element, swap them.<br>
+                            <strong>3. Continue Pass:</strong> Move to the next pair and repeat the comparison and swapping process.<br>
+                            <strong>4. Repeat Passes:</strong> After each complete pass, the largest unsorted element will be in its correct position.<br>
+                            <strong>5. Stop When Sorted:</strong> Continue until no swaps are needed in a complete pass.
+                        </p>
+                    </div>
+
+                    <div class="content-section">
+                        <h2 class="section-title">Time & Space Complexity</h2>
+                        <p class="section-content">
+                            Bubble Sort has a time complexity of O(n²) in both average and worst cases (making it inefficient for large data), its best-case time complexity is O(n), which is when the array is already sorted and no swaps are needed.<br> As for space complexity, its O(1) as it sorts the array in place.
+                        </p>
+                    </div>
+
+                    <div class="content-section">
+                        <h2 class="section-title">Prerequisites & Advantages</h2>
+                        <p class="section-content">
+                            Bubble Sort requires no special prerequisites and it performs poorly on large datasets but its main advantages include simplicity of implementation and educational value for understanding sorting concepts.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Insertion Sort Section -->
+                <div v-if="sidebarSection === 'insertion'">
+                    <div class="content-header">
+                        <h1 class="content-title">Insertion Sort</h1>
+                        <p class="content-subtitle">A comparison-based sorting algorithm that builds the final sorted array one element at a time by maintaining a sorted subarray at the beginning and gradually expanding it by repeatedly taking an element from the unsorted portion and inserting it into its correct position in the sorted portion.</p>
+                    </div>
+
+                    <div class="animation-container">
+                        <div class="animation-controls">
+                        <button class="control-btn" 
+                                @click="togglePlayPause" >
+                        <i :class="animationState.isPlaying && !animationState.isPaused ? 'fas fa-pause' : 'fas fa-play'"></i>
+                        </button>
+                        <button class="control-btn" @click="resetAnimation">
+                            <i class="fas fa-redo"></i> 
+                        </button>
+                        <button class="control-btn" @click="stepBackAnimation" :disabled="animationState.isPlaying || animationState.currentStep === 0">
+                            <i class="fas fa-step-backward"></i> 
+                        </button>
+                        <button class="control-btn" @click="stepAnimation" :disabled="animationState.isPlaying">
+                            <i class="fas fa-step-forward"></i> 
+                        </button>
+                        </div>
+
+                        <div class="progress-bar">
+                        <div class="progress-fill" :style="{width: animationState.progress + '%'}"></div>
+                        </div>
+
+                        <div class="visualisation-area" id="visualArea"></div>
+
+                        <div class="step-info">
+                        <div class="step-title">{{ animationState.stepTitle }}</div>
+                        <div class="step-description">{{ animationState.stepDescription }}</div>
+                        </div>
+                    </div>
+
+                    <div class="input-wrapper">
+                        <div class="user-inputs">
+                            <input v-for="(val, index) in userInputs"
+                                :key="index"
+                                v-model="userInputs[index]"
+                                @input="handleInput(index)"
+                                type="text"
+                                maxlength="3"
+                                class="user-box"
+                                placeholder="0" />
+                        </div>
+                        <button class="control-btn" @click="submitUserInput">Submit</button>
+                    </div>
+
+                    <div class="algorithm-code">
+                        <div class="code-header">
+                            <span class="code-language">Python Implementation</span>
+                        </div>
+                        <pre><code class="language-python">def insertion_sort(arr):
+    # traverse through 1 to len(arr)
+    for i in range(1, len(arr)):
+        key = arr[i]
+        j = i - 1
+        
+        # move elements of arr[0..i-1], that are greater than key, to one position ahead of their current position
+        while j >= 0 and arr[j] > key:
+            arr[j + 1] = arr[j]
+            j -= 1
+        
+        # Place key at after the element just smaller than it
+        arr[j + 1] = key
+
+    return arr
+
+    numbers = [83, 41, 24, 3, 12, 11, 95, 5]
+    sorted_numbers = insertion_sort(numbers.copy())
+    print(f"Original: {numbers}")
+    print(f"Sorted: {sorted_numbers}")</code></pre>
+                    </div>
+
+                    <div class="content-section">
+                        <h2 class="section-title">Key Steps</h2>
+                        <p class="section-content">
+                            <strong>1. Start with Second:</strong> Start with the second element (at index 1), as a sequence containing a single element is always sorted.<br>
+                            <strong>2. Compare Backwards:</strong> Compare the current element with elements in the sorted portion, moving from right to left.<br>
+                            <strong>3. Shift Elements:</strong> Shift larger elements one position to the right to make space.<br>
+                            <strong>4. Insert Element:</strong> Place the current element in its correct position.<br>
+                            <strong>5. Repeat:</strong> Continue this process for all the remaining elements.
+                        </p>
+                    </div>
+
+                    <div class="content-section">
+                        <h2 class="section-title">Time & Space Complexity</h2>
+                        <p class="section-content">
+                            Insertion Sort has a time complexity of O(n²) in the average and worst cases, but performs much better on nearly sorted arrays with O(n) time complexity in the best case. <br> Its space complexity is O(1) as it sorts in-place. 
+                        </p>
+                    </div>
+
+                    <div class="content-section">
+                        <h2 class="section-title">Prerequisites & Advantages</h2>
+                        <p class="section-content">
+                            Insertion Sort has no special prerequisites and its key advantages include excellent performance on small datasets, adaptive behavior (as it performs well on nearly sorted arrays), and in-place sorting with minimal memory usage.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Selection Sort Section -->
+                <div v-if="sidebarSection === 'selection'">
+                    <div class="content-header">
+                        <h1 class="content-title">Selection Sort</h1>
+                        <p class="content-subtitle">An algorithm that works by dividing the array into two parts: a sorted portion at the beginning and an unsorted portion at the end, it repeatedly finds the minimum element from the unsorted portion and swaps it with the first element of the same portion, effectively growing the sorted portion by one element each iteration.</p>
+                    </div>
+
+                    <div class="animation-container">
+                        <div class="animation-controls">
+                        <button class="control-btn" 
+                                @click="togglePlayPause" >
+                        <i :class="animationState.isPlaying && !animationState.isPaused ? 'fas fa-pause' : 'fas fa-play'"></i>
+                        </button>
+                        <button class="control-btn" @click="resetAnimation">
+                            <i class="fas fa-redo"></i> 
+                        </button>
+                        <button class="control-btn" @click="stepBackAnimation" :disabled="animationState.isPlaying || animationState.currentStep === 0">
+                            <i class="fas fa-step-backward"></i> 
+                        </button>
+                        <button class="control-btn" @click="stepAnimation" :disabled="animationState.isPlaying">
+                            <i class="fas fa-step-forward"></i> 
+                        </button>
+                        </div>
+
+                        <div class="progress-bar">
+                        <div class="progress-fill" :style="{width: animationState.progress + '%'}"></div>
+                        </div>
+
+                        <div class="visualisation-area" id="visualArea"></div>
+
+                        <div class="step-info">
+                        <div class="step-title">{{ animationState.stepTitle }}</div>
+                        <div class="step-description">{{ animationState.stepDescription }}</div>
+                        </div>
+                    </div>
+
+                    <div class="input-wrapper">
+                        <div class="user-inputs">
+                            <input v-for="(val, index) in userInputs"
+                                :key="index"
+                                v-model="userInputs[index]"
+                                @input="handleInput(index)"
+                                type="text"
+                                maxlength="3"
+                                class="user-box"
+                                placeholder="0" />
+                        </div>
+                        <button class="control-btn" @click="submitUserInput">Submit</button>
+                    </div>
+
+                    <div class="algorithm-code">
+                        <div class="code-header">
+                            <span class="code-language">Python Implementation</span>
+                        </div>
+                        <pre><code class="language-python">def selection_sort(arr):
+    n = len(arr)
+    
+    # traverse through all array elements
+    for i in range(n):
+        # find the  minimum element in remaining unsorted array
+        min_idx = i # minimum element index 
+        for j in range(i + 1, n):
+            if arr[j] < arr[min_idx]:
+                min_idx = j
+        
+        # swap the found minimum element with the first element
+        arr[i], arr[min_idx] = arr[min_idx], arr[i]
+    
+    return arr
+
+numbers = [83, 41, 24, 3, 12, 11, 95, 5]
+sorted_numbers = selection_sort(numbers.copy())
+print(f"Original: {numbers}")
+print(f"Sorted: {sorted_numbers}")</code></pre>
+                    </div>
+
+                    <div class="content-section">
+                        <h2 class="section-title">Key Steps</h2>
+                        <p class="section-content">
+                            <strong>1. Find Minimum:</strong> Search through the unsorted portion to find the smallest element.<br>
+                            <strong>2. Swap Elements:</strong> Swap the minimum element with the first element of the unsorted portion.<br>
+                            <strong>3. Expand Sorted:</strong> The sorted portion now includes one more element.<br>
+                            <strong>4. Repeat Process:</strong> Continue this process for the remaining unsorted elements.<br>
+                            <strong>5. Complete:</strong> When no unsorted elements remain, the array is fully sorted!
+                        </p>
+                    </div>
+
+                    <div class="content-section">
+                        <h2 class="section-title">Time & Space Complexity</h2>
+                        <p class="section-content">
+                            Selection Sort has a consistent time complexity of O(n²) for all cases (best, average, and worst), making it inefficient for large datasets. <br> Its space complexity is O(1) making it pretty memory-efficient.
+                        </p>
+                    </div>
+
+                     <div class="content-section">
+                        <h2 class="section-title">Prerequisites & Advantages</h2>
+                        <p class="section-content">
+                            Selection Sort has no special prerequisites and its main advantages including simplicity of implementation and minimal memory usage with in-place sorting. 
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Quick Sort Section -->
+                <div v-if="sidebarSection === 'quick'" class="">
+                    <div class="content-header">
+                        <h1 class="content-title">Quick Sort</h1>
+                        <p class="content-subtitle">An efficient divide-and-conquer sorting algorithm that works by selecting a 'pivot' element from the array and partitioning the other elements into two sub-arrays according to whether they are less than or greater than the pivot, the sub-arrays are then sorted recursively.</p>
+                    </div>
+                    
+
+                    <div class="animation-container">
+                        <div class="animation-controls">
+                            <button class="control-btn" 
+                                    @click="togglePlayPause" >
+                            <i :class="animationState.isPlaying && !animationState.isPaused ? 'fas fa-pause' : 'fas fa-play'"></i>
+                            </button>
+                            <button class="control-btn" @click="resetAnimation">
+                                <i class="fas fa-redo"></i> 
+                            </button>
+                            <button class="control-btn" @click="stepBackAnimation" :disabled="animationState.isPlaying || animationState.currentStep === 0">
+                                <i class="fas fa-step-backward"></i> 
+                            </button>
+                            <button class="control-btn" @click="stepAnimation" :disabled="animationState.isPlaying">
+                                <i class="fas fa-step-forward"></i> 
+                            </button>
+                        </div>
+
+                        <div class="progress-bar">
+                            <div class="progress-fill" :style="{width: animationState.progress + '%'}"></div>
+                        </div>
+
+                        <div class="visualisation-area" id="visualArea"></div>
+
+                        <div class="step-info">
+                            <div class="step-title">{{ animationState.stepTitle }}</div>
+                            <div class="step-description">{{ animationState.stepDescription }}</div>
+                        </div>
+                    </div>
+
+                    <div class="input-wrapper">
+                        <div class="user-inputs">
+                            <input v-for="(val, index) in userInputs"
+                                :key="index"
+                                v-model="userInputs[index]"
+                                @input="handleInput(index)"
+                                type="text"
+                                maxlength="3"
+                                class="user-box"
+                                placeholder="0" />
+                        </div>
+                        <button class="control-btn" @click="submitUserInput">Submit</button>
+                    </div>
+
+                    <div class="algorithm-code">
+                        <div class="code-header">
+                            <span class="code-language">Python Implementation</span>
+                        </div>
+                        <pre><code class="language-python">def quick_sort(arr, low=0, high=None):
+    if high is None:
+        high = len(arr) - 1
+    
+    if low < high:
+        # partition index
+        pi = partition(arr, low, high)
+        
+        # separately sort elements before partition and after partition
+        quick_sort(arr, low, pi - 1)
+        quick_sort(arr, pi + 1, high)
+    
+    return arr
+
+def partition(arr, low, high):
+    # choose the rightmost/last element as pivot
+    pivot = arr[high]
+    
+    # index of smaller element indicates right position of pivot found so far
+    i = low - 1
+    
+    for j in range(low, high):
+        # if current element is smaller than or equal to pivot
+        if arr[j] <= pivot:
+            i += 1
+            arr[i], arr[j] = arr[j], arr[i]
+    
+    # place pivot at correct position
+    arr[i + 1], arr[high] = arr[high], arr[i + 1]
+    return i + 1
+
+numbers = [83, 41, 24, 3, 12, 11, 95, 5]
+sorted_numbers = quick_sort(numbers.copy())
+print(f"Original: {numbers}")
+print(f"Sorted: {sorted_numbers}")</code></pre>
+                    </div>
+
+                    <div class="content-section">
+                        <h2 class="section-title">Key Steps</h2>
+                        <p class="section-content">
+                            <strong>1. Choose Pivot:</strong> Select a pivot element from the array (usually the last element).<br>
+                            <strong>2. Partition:</strong> Rearrange the array so elements smaller than pivot come before it, and elements that are greater come after.<br>
+                            <strong>3. Recursively Sort:</strong> Apply the same process to the sub-arrays on either side of the pivot.
+                        </p>
+                    </div>
+
+                    <div class="content-section">
+                        <h2 class="section-title">Time & Space Complexity</h2>
+                        <p class="section-content">
+                            Quick Sort has an average time complexity of O(n log n), but in the worst case (e.g. when the pivot is always the smallest or largest element), it can degrade to O(n²). However, with good pivot selection strategies, the worst-case scenarios are rare. <br> Its space complexity is O(log n) in the average and best cases, in the worst cases (e.g. when the array is sorted in descending order) its O(n).
+                        </p>
+                    </div>
+
+                    <div class="content-section">
+                        <h2 class="section-title">Prerequisites & Advantages</h2>
+                        <p class="section-content">
+                            Quick Sort has no special prerequisites and its main advantages include excellent average-case performance, in-place sorting with minimal memory use, and being cache-friendly. <br> It's widely used in practice and forms the basis for many standard library sorting functions.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Merge Sort Section -->
+                <div v-if="sidebarSection === 'merge'" class="">
+                    <div class="content-header">
+                        <h1 class="content-title">Merge Sort</h1>
+                        <p class="content-subtitle">A divide-and-conquer sorting algorithm that works by recursively dividing the array into smaller subarrays until each subarray contains only one element, then merging these subarrays back together in sorted order.</p>
+                    </div>
+
+                    <div class="animation-container">
+                        <div class="animation-controls">
+                            <button class="control-btn" 
+                                    @click="togglePlayPause" >
+                            <i :class="animationState.isPlaying && !animationState.isPaused ? 'fas fa-pause' : 'fas fa-play'"></i>
+                            </button>
+                            <button class="control-btn" @click="resetAnimation">
+                                <i class="fas fa-redo"></i> 
+                            </button>
+                            <button class="control-btn" @click="stepBackAnimation" :disabled="animationState.isPlaying || animationState.currentStep === 0">
+                                <i class="fas fa-step-backward"></i> 
+                            </button>
+                            <button class="control-btn" @click="stepAnimation" :disabled="animationState.isPlaying">
+                                <i class="fas fa-step-forward"></i> 
+                            </button>
+                        </div>
+
+                        <div class="progress-bar">
+                            <div class="progress-fill" :style="{width: animationState.progress + '%'}"></div>
+                        </div>
+
+                        <div class="visualisation-area" id="visualArea"></div>
+
+                        <div class="step-info">
+                            <div class="step-title">{{ animationState.stepTitle }}</div>
+                            <div class="step-description">{{ animationState.stepDescription }}</div>
+                        </div>
+                    </div>
+
+                    <div class="input-wrapper">
+                        <div class="user-inputs">
+                            <input v-for="(val, index) in userInputs"
+                                :key="index"
+                                v-model="userInputs[index]"
+                                @input="handleInput(index)"
+                                type="text"
+                                maxlength="3"
+                                class="user-box"
+                                placeholder="0" />
+                        </div>
+                        <button class="control-btn" @click="submitUserInput">Submit</button>
+                    </div>
+
+
+                    <div class="algorithm-code">
+                        <div class="code-header">
+                            <span class="code-language">Python Implementation</span>
+                        </div>
+                        <pre><code class="language-python">def merge_sort(arr):
+    if len(arr) <= 1:
+        return arr
+    
+    # divide the array into two halves
+    mid = len(arr) // 2
+    left = arr[:mid]
+    right = arr[mid:]
+    
+    # recursively sort both halves
+    left = merge_sort(left)
+    right = merge_sort(right)
+    
+    # merge the sorted halves
+    return merge(left, right)
+
+def merge(left, right):
+    result = []
+    i = j = 0
+    
+    # compare elements from both arrays and merge in sorted order
+    while i < len(left) and j < len(right):
+        if left[i] <= right[j]:
+            result.append(left[i])
+            i += 1
+        else:
+            result.append(right[j])
+            j += 1
+    
+    # add remaining elements
+    result.extend(left[i:])
+    result.extend(right[j:])
+    
+    return result
+
+numbers = [83, 41, 24, 3, 12, 11, 95, 5]
+sorted_numbers = merge_sort(numbers.copy())
+print(f"Original: {numbers}")
+print(f"Sorted: {sorted_numbers}")</code></pre>
+                    </div>
+
+                    <div class="content-section">
+                        <h2 class="section-title">Key Steps</h2>
+                        <p class="section-content">
+                            <strong>1. Divide:</strong> Split the array into two halves repeatedly until you have individual elements.<br>
+                            <strong>2. Conquer:</strong> Merge the divided elements back together, comparing and arranging them in sorted order.<br>
+                            <strong>3. Combine:</strong> Continue merging until theres only one completely sorted array!
+                        </p>
+                    </div>
+
+                    <div class="content-section">
+                        <h2 class="section-title">Time & Space Complexity</h2>
+                        <p class="section-content">
+                            Merge Sort has a consistent time complexity of O(n log n) in all cases (best, average, and worst) and a space complexity of O(n) since it requires additional space for the merging process.
+                        </p>
+                    </div>
+
+                    <div class="content-section">
+                        <h2 class="section-title">Prerequisites & Advantages</h2>
+                        <p class="section-content">
+                            Merge Sort has no special prerequisites and its key advantages include consistent O(n log n) performance, stability and efficiency in sorting large datasets.
+                        </p>
+                    </div>
+
+                </div>
+
+                <!-- Searching Algorithms from here onwards :) -->
+                 <!-- Linear Search -->
+                 <div v-if="sidebarSection === 'linear'">
+                    <div class="content-header">
+                        <h1 class="content-title">Linear Search</h1>
+                        <p class="content-subtitle">A simple search algorithm that finds a target value by sequentially checking each element in an array from the beginning until the target is found or the end of the array is reached.</p>
+                    </div>
+
+                    <div class="animation-container">
+                        <div class="animation-controls">
+                            <button class="control-btn" 
+                                    @click="togglePlayPause" >
+                            <i :class="animationState.isPlaying && !animationState.isPaused ? 'fas fa-pause' : 'fas fa-play'"></i>
+                            </button>
+                            <button class="control-btn" @click="resetAnimation">
+                                <i class="fas fa-redo"></i> 
+                            </button>
+                            <button class="control-btn" @click="stepBackAnimation" :disabled="animationState.isPlaying || animationState.currentStep === 0">
+                                <i class="fas fa-step-backward"></i> 
+                            </button>
+                            <button class="control-btn" @click="stepAnimation" :disabled="animationState.isPlaying">
+                                <i class="fas fa-step-forward"></i> 
+                            </button>
+                        </div>
+
+                        <div class="progress-bar">
+                            <div class="progress-fill" :style="{width: animationState.progress + '%'}"></div>
+                        </div>
+
+                        <div class="visualisation-area" id="visualArea"></div>
+
+                        <div class="step-info">
+                            <div class="step-title">{{ animationState.stepTitle }}</div>
+                            <div class="step-description">{{ animationState.stepDescription }}</div>
+                        </div>
+                    </div>
+
+                    <div class="input-wrapper">
+                        <div class="search-inputs">
+                            <div class="array-input-section">
+                                <div class="user-inputs">
+                                    <input v-for="(val, index) in userInputs"
+                                        :key="index"
+                                        v-model="userInputs[index]"
+                                        @input="handleInput(index)"
+                                        type="text"
+                                        maxlength="3"
+                                        class="user-box"
+                                        placeholder="0" />
+                                </div>
+                            </div>
+                            <div class="target-input-section">
+                                <input v-model="userTarget"
+                                    @input="handleInput('',userTarget)"
+                                    type="text"
+                                    maxlength="3"
+                                    class="user-box"
+                                    placeholder="TGT" />
+                            </div>
+                        </div>
+                        <button class="control-btn" @click="submitUserInput">Submit</button>
+                    </div>
+
+                    <div class="algorithm-code">
+                        <div class="code-header">
+                            <span class="code-language">Python Implementation</span>
+                        </div>
+                        <pre><code class="language-python">def linear_search(arr, target):
+    # traverse through all array elements
+    for i in range(len(arr)):
+        # If element is found, return its index
+        if arr[i] == target:
+            return i
+    
+    # if element is not found, return -1
+    return -1
+
+numbers = [83, 41, 24, 3, 12, 11, 95, 5]
+target = 22
+result = linear_search(numbers, target)
+
+if result != -1:
+    print(f"Element {target} found at index {result}")
+else:
+    print(f"Element {target} not found in the array")</code></pre>
+                    </div>
+
+                    <div class="content-section">
+                        <h2 class="section-title">Key Steps</h2>
+                        <p class="section-content">
+                            <strong>1. Start at Beginning:</strong> Begin the search from the first element of the array.<br>
+                            <strong>2. Compare Elements:</strong> Compare the current element with the target value.<br>
+                            <strong>3. Check Match:</strong> If they match, return the current index as the result.<br>
+                            <strong>4. Move Forward:</strong> If no match, move to the next element and repeat.<br>
+                            <strong>5. Complete Search:</strong> Continue until target is found or all elements are checked.
+                        </p>
+                    </div>
+
+                    <div class="content-section">
+                        <h2 class="section-title">Time & Space Complexity</h2>
+                        <p class="section-content">
+                            Linear Search has a time complexity of O(n) in the average and worst case, and O(1) In the best case (when the target is the first element). The average case is O(n/2), which simplifies to O(n). <br> Its space complexity is O(1) as it uses a constant amount of extra space, regardless of input size.
+                        </p>
+                    </div>
+
+                    <div class="content-section">
+                        <h2 class="section-title">Prerequisites & Advantages</h2>
+                        <p class="section-content">
+                            Linear Search has no special prerequisites and works on both sorted and unsorted arrays with any data type, its main advantages include simplicity of implementation, no need for sorted data, and suitability for small datasets or when searching is not done too frequently. <br> It's also useful when the array is frequently modified, as it doesn't require maintaining sorted order like binary search.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Binary Search Section -->
+                <div v-if="sidebarSection === 'binary'">
+                    <div class="content-header">
+                        <h1 class="content-title">Binary Search</h1>
+                        <p class="content-subtitle">An efficient search algorithm for finding a target value in a sorted array, by repeatedly dividing the search interval in half. If the target value is less than the middle element, the search continues in the left half; otherwise, it continues in the right half, and this process continues until the target is found or the interval is empty.</p>
+                    </div>
+
+                    <div class="animation-container">
+                        <div class="animation-controls">
+                            <button class="control-btn" 
+                                    @click="togglePlayPause" >
+                            <i :class="animationState.isPlaying && !animationState.isPaused ? 'fas fa-pause' : 'fas fa-play'"></i>
+                            </button>
+                            <button class="control-btn" @click="resetAnimation">
+                                <i class="fas fa-redo"></i> 
+                            </button>
+                            <button class="control-btn" @click="stepBackAnimation" :disabled="animationState.isPlaying || animationState.currentStep === 0">
+                                <i class="fas fa-step-backward"></i> 
+                            </button>
+                            <button class="control-btn" @click="stepAnimation" :disabled="animationState.isPlaying">
+                                <i class="fas fa-step-forward"></i> 
+                            </button>
+                        </div>
+
+                        <div class="progress-bar">
+                            <div class="progress-fill" :style="{width: animationState.progress + '%'}"></div>
+                        </div>
+
+                        <div class="visualisation-area" id="visualArea"></div>
+
+                        <div class="step-info">
+                            <div class="step-title">{{ animationState.stepTitle }}</div>
+                            <div class="step-description">{{ animationState.stepDescription }}</div>
+                        </div>
+                    </div>
+
+                    <div class="input-wrapper">
+                        <div class="search-inputs">
+                            <div class="array-input-section">
+                                <div class="user-inputs">
+                                    <input v-for="(val, index) in userInputs"
+                                        :key="index"
+                                        v-model="userInputs[index]"
+                                        @input="handleInput(index)"
+                                        type="text"
+                                        maxlength="3"
+                                        class="user-box"
+                                        placeholder="0" />
+                                </div>
+                            </div>
+                            <div class="target-input-section">
+                                <input v-model="userTarget"
+                                    @input="handleInput('',userTarget)"
+                                    type="text"
+                                    maxlength="3"
+                                    class="user-box"
+                                    placeholder="TGT" />
+                            </div>
+                        </div>
+                        <button class="control-btn" @click="submitUserInput">Submit</button>
+                    </div>
+
+                    <div class="algorithm-code">
+                        <div class="code-header">
+                            <span class="code-language">Python Implementation</span>
+                        </div>
+                        <pre><code class="language-python">def binary_search(arr, target):
+    left = 0
+    right = len(arr) - 1
+    
+    while left <= right:
+        # calculate the middle index
+        mid = (left + right) // 2
+        
+        # if target is found at mid, return the index
+        if arr[mid] == target:
+            return mid
+        
+        # if target is smaller, ignore the right half
+        elif arr[mid] > target:
+            right = mid - 1
+        
+        # if target is larger, ignore the left half
+        else:
+            left = mid + 1
+    
+    # if target is not found, return -1 
+    return -1
+
+numbers = [3, 5, 11, 12, 24, 41, 83, 95]  # array must be sorted for binary search
+target = 22
+result = binary_search(numbers, target)
+
+if result != -1:
+    print(f"Element {target} found at index {result}!!!")
+else:
+    print(f"Element {target} not found in the array.")</code></pre>
+                    </div>
+
+                    <div class="content-section">
+                        <h2 class="section-title">Key Steps</h2>
+                        <p class="section-content">
+                            <strong>1. Initialise:</strong> Set left pointer to 0 and right pointer to array length - 1.<br>
+                            <strong>2. Calculate Middle:</strong> Find middle index as (left + right) / 2.<br>
+                            <strong>3. Compare:</strong> Compare middle element with target value.<br>
+                            <strong>4. Narrow Search:</strong> If target is smaller, search left half, and if larger, search right half.<br>
+                            <strong>5. Repeat:</strong> Continue until target is found or search space is exhausted.
+                        </p>
+                    </div>
+
+                    <div class="content-section">
+                        <h2 class="section-title">Time & Space Complexity</h2>
+                        <p class="section-content">
+                            Binary Search has a time complexity of O(log n), making it much more efficient than linear search for large datasets. Its space complexity is O(1), since it uses a constant amount of extra space regardless of the input size.
+                        </p>
+                    </div>
+
+                    <div class="content-section">
+                        <h2 class="section-title">Prerequisites & Advantages</h2>
+                        <p class="section-content">
+                            Binary Search requires the array to be sorted beforehand, however, this prerequisite is often worth it because of the algorithm's efficiency. It's particularly useful for applications that perform many searches on the same dataset, such as databases.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Breadth First Search Section -->
+                <div v-if="sidebarSection === 'breadth'">
+                    <div class="content-header">
+                        <h1 class="content-title">Breadth First Search</h1>
+                        <p class="content-subtitle">It is a graph traversal algorithm that explores nodes in a systematic way, starting at a root node and exploring all neighbouring nodes at the current depth level before moving on to nodes at the next depth level. BFS uses a queue data structure to keep track of nodes to visit next.</p>
+                    </div>
+
+                    <div class="animation-container">
+                        <div class="animation-controls">
+                            <button class="control-btn" 
+                                    @click="togglePlayPause" >
+                            <i :class="animationState.isPlaying && !animationState.isPaused ? 'fas fa-pause' : 'fas fa-play'"></i>
+                            </button>
+                            <button class="control-btn" @click="resetAnimation">
+                                <i class="fas fa-redo"></i> 
+                            </button>
+                            <button class="control-btn" @click="stepBackAnimation" :disabled="animationState.isPlaying || animationState.currentStep === 0">
+                                <i class="fas fa-step-backward"></i> 
+                            </button>
+                            <button class="control-btn" @click="stepAnimation" :disabled="animationState.isPlaying">
+                                <i class="fas fa-step-forward"></i> 
+                            </button>
+                        </div>
+
+                        <div class="progress-bar">
+                            <div class="progress-fill" :style="{width: animationState.progress + '%'}"></div>
+                        </div>
+
+                        <div class="visualisation-area" id="visualArea"></div>
+
+                        <div class="step-info">
+                            <div class="step-title">{{ animationState.stepTitle }}</div>
+                            <div class="step-description">{{ animationState.stepDescription }}</div>
+                        </div>
+                    </div>
+
+                    <div class="input-wrapper">
+                        <div class="search-inputs">
+                            <div class="array-input-section">
+                                <div class="user-inputs">
+                                    <input v-for="(val, index) in userInputs"
+                                        :key="index"
+                                        v-model="userInputs[index]"
+                                        @input="handleInput(index)"
+                                        type="text"
+                                        maxlength="3"
+                                        class="user-box"
+                                        placeholder="0" />
+                                </div>
+                            </div>
+                            <div class="target-input-section">
+                                <input v-model="userTarget"
+                                    @input="handleInput('',userTarget)"
+                                    type="text"
+                                    maxlength="3"
+                                    class="user-box"
+                                    placeholder="TGT" />
+                            </div>
+                        </div>
+                        <button class="control-btn" @click="submitUserInput">Submit</button>
+                    </div>
+
+                    <div class="algorithm-code">
+                        <div class="code-header">
+                            <span class="code-language">Python Implementation</span>
+                        </div>
+                        <pre><code class="language-python">from collections import deque
+
+def breadth_first_search(graph, start, target):
+    # Initialise queue with starting node and visited set
+    queue = deque([start])
+    visited = {start}
+    parent = {start: None}
+    
+    while queue:
+        # remove node from front of queue
+        current = queue.popleft()
+        
+        # check if target is found
+        if current == target:
+            return reconstruct_path(parent, start, target)
+        
+        # add all unvisited neighbours to queue
+        for neighbour in graph.get(current, []):
+            if neighbour not in visited:
+                visited.add(neighbour)
+                parent[neighbour] = current
+                queue.append(neighbour)
+    
+    # target not found
+    return None
+
+def reconstruct_path(parent, start, target):
+    path = []
+    current = target
+    while current is not None:
+        path.append(current)
+        current = parent[current]
+    return path[::-1]  # reverse to get the path from start to target
+
+
+graph = {
+    'A': ['B', 'C'],
+    'B': ['A', 'D', 'E'],
+    'C': ['A', 'F'],
+    'D': ['B'],
+    'E': ['B', 'F'],
+    'F': ['C', 'E']
+}
+
+start_node = 'A'
+target_node = 'F'
+path = breadth_first_search(graph, start_node, target_node)
+
+if path:
+    print(f"Path from {start_node} to {target_node}: {' -> '.join(path)}")
+else:
+    print(f"No path found from {start_node} to {target_node}")</code></pre>
+                    </div>
+
+                    <div class="content-section">
+                        <h2 class="section-title">Key Steps</h2>
+                        <p class="section-content">
+                            <strong>1. Initialise:</strong> Start with the root node and add it to a queue, mark it as visited.<br>
+                            <strong>2. Process Queue:</strong> Remove the front node from the queue and process it.<br>
+                            <strong>3. Add Neighbours:</strong> Add all unvisited neighbouring nodes to the queue and mark them as visited.<br>
+                            <strong>4. Repeat:</strong> Continue until the queue is empty or the target is found.<br>
+                            <strong>5. Complete:</strong> All reachable nodes have been visited in breadth-first order!
+                        </p>
+                    </div>
+
+                    <div class="content-section">
+                        <h2 class="section-title">Time & Space Complexity</h2>
+                        <p class="section-content">
+                            BFS has a time complexity of O(V + E) where 'V' is the number of vertices and 'E' is the number of edges, the space complexity is O(V) due to the queue and visited set. 
+                        </p>
+                    </div>
+
+                    <div class="content-section">
+                        <h2 class="section-title">Applications & Advantages</h2>
+                        <p class="section-content">
+                            BFS is ideal for finding shortest paths in unweighted graphs, level-order tree traversal, and detecting cycles in undirected graphs. It's used in social networking (finding connections), web crawling, GPS navigation systems, and broadcasting in networks. 
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Depth First Search Section -->
+                <div v-if="sidebarSection === 'depth'">
+                    <div class="content-header">
+                        <h1 class="content-title">Depth First Search</h1>
+                        <p class="content-subtitle">Depth First Search (DFS) is a graph traversal algorithm that explores each branch as far as possible before backtracking.</p>
+                    </div>
+
+                    <div class="animation-container">
+                        <div class="animation-controls">
+                            <button class="control-btn" 
+                                    @click="togglePlayPause" >
+                            <i :class="animationState.isPlaying && !animationState.isPaused ? 'fas fa-pause' : 'fas fa-play'"></i>
+                            </button>
+                            <button class="control-btn" @click="resetAnimation">
+                                <i class="fas fa-redo"></i> 
+                            </button>
+                            <button class="control-btn" @click="stepBackAnimation" :disabled="animationState.isPlaying || animationState.currentStep === 0">
+                                <i class="fas fa-step-backward"></i> 
+                            </button>
+                            <button class="control-btn" @click="stepAnimation" :disabled="animationState.isPlaying">
+                                <i class="fas fa-step-forward"></i> 
+                            </button>
+                        </div>
+
+                        <div class="progress-bar">
+                            <div class="progress-fill" :style="{width: animationState.progress + '%'}"></div>
+                        </div>
+
+                        <div class="visualisation-area" id="visualArea"></div>
+
+                        <div class="step-info">
+                            <div class="step-title">{{ animationState.stepTitle }}</div>
+                            <div class="step-description">{{ animationState.stepDescription }}</div>
+                        </div>
+                    </div>
+
+                     <div class="input-wrapper">
+                        <div class="search-inputs">
+                            <div class="array-input-section">
+                                <div class="user-inputs">
+                                    <input v-for="(val, index) in userInputs"
+                                        :key="index"
+                                        v-model="userInputs[index]"
+                                        @input="handleInput(index)"
+                                        type="text"
+                                        maxlength="3"
+                                        class="user-box"
+                                        placeholder="0" />
+                                </div>
+                            </div>
+                            <div class="target-input-section">
+                                <input v-model="userTarget"
+                                    @input="handleInput('',userTarget)"
+                                    type="text"
+                                    maxlength="3"
+                                    class="user-box"
+                                    placeholder="TGT" />
+                            </div>
+                        </div>
+                        <button class="control-btn" @click="submitUserInput">Submit</button>
+                    </div>
+
+                    <div class="algorithm-code">
+                        <div class="code-header">
+                            <span class="code-language">Python Implementation</span>
+                        </div>
+                        <pre><code class="language-python">def depth_first_search(graph, start, target, visited=None, path=None):
+    if visited is None:
+        visited = set()
+    if path is None:
+        path = []
+    
+    # mark current node as visited and add it to path
+    visited.add(start)
+    path.append(start)
+    
+    # check if the target is found
+    if start == target:
+        return path.copy()
+    
+    # recursively visit all the unvisited neighbours
+    for neighbour in graph.get(start, []):
+        if neighbour not in visited:
+            result = depth_first_search(graph, neighbour, target, visited, path)
+            if result:  # If target found in this path
+                return result
+    
+    # backtrack, remove current node from path
+    path.pop()
+    return None
+
+def dfs_iterative(graph, start, target):
+    # using stack for iterative implementation :))
+    stack = [(start, [start])]
+    visited = set()
+    
+    while stack:
+        current, path = stack.pop()
+        
+        if current in visited:
+            continue
+        
+        visited.add(current)
+        
+        # check if target is found
+        if current == target:
+            return path
+        
+        # add the neighbours to the stack
+        for neighbour in graph.get(current, []):
+            if neighbour not in visited:
+                stack.append((neighbour, path + [neighbour]))
+    
+    return None
+
+graph = {
+    'A': ['B', 'C'],
+    'B': ['A', 'D', 'E'],
+    'C': ['A', 'F'],
+    'D': ['B'],
+    'E': ['B', 'F'],
+    'F': ['C', 'E']
+}
+
+start_node = 'A'
+target_node = 'F'
+
+# recursive DFS
+path_recursive = depth_first_search(graph, start_node, target_node)
+print(f"DFS Recursive path from {start_node} to {target_node}: {' -> '.join(path_recursive) if path_recursive else 'No path found'}")
+
+# iterative DFS
+path_iterative = dfs_iterative(graph, start_node, target_node)
+print(f"DFS Iterative path from {start_node} to {target_node}: {' -> '.join(path_iterative) if path_iterative else 'No path found'}")</code></pre>
+                    </div>
+
+                    <div class="content-section">
+                        <h2 class="section-title">Key Steps</h2>
+                        <p class="section-content">
+                            <strong>1. Start:</strong> Begin at the root node and mark it as visited.<br>
+                            <strong>2. Explore Deep:</strong> Choose an unvisited neighbour and recursively apply DFS to it.<br>
+                            <strong>3. Backtrack:</strong> When no unvisited neighbours remain, backtrack to the previous node.<br>
+                            <strong>4. Continue:</strong> Repeat the process for other unvisited neighbours.<br>
+                            <strong>5. Complete:</strong> Finish when all reachable nodes have been visited!
+                        </p>
+                    </div>
+
+                    <div class="content-section">
+                        <h2 class="section-title">Time & Space Complexity</h2>
+                        <p class="section-content">
+                            DFS has a time complexity of O(V + E) where 'V' is the number of vertices and 'E' is the number of edges, the space complexity is O(V) in the worst case.
+                        </p>
+                    </div>
+
+                    <div class="content-section">
+                        <h2 class="section-title">Applications & Characteristics</h2>
+                        <p class="section-content">
+                            DFS is used for topological sorting, detecting cycles in directed graphs, pathfinding in mazes, generating mazes, and solving puzzles with backtracking. <br>  It's memory-efficient for deep, narrow graphs and can easily detect strongly connected components. Although, it may not find the shortest path and can get stuck in infinite paths in infinite graphs.
+                        </p>
+                    </div>
+                </div>
+
+
+                <!-- Other Sections -->
+                <div v-else-if="!['intro', 'bubble', 'selection', 'insertion', 'merge', 'quick', 'binary', 'breadth','depth'].includes(sidebarSection)">
+                     <div class="content-header">
+                        <h1 class="content-title">404 Page Not Found :\</h1>
+                        <p class="content-subtitle">Select a topic from the sidebar to view its content.</p>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+    <script src="./main.js"></script>
+</body>
+</html>
+
