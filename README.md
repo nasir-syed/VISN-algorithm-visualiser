@@ -1,7 +1,9 @@
 # VISN-algorithm-visualiser
 
 VISN is a dynamic and interactive algorithm visualiser built with modern web technologies, allowing users to visualise, understand, and explore a wide variety of algorithms through animations, step-by-step breakdowns, code snippets, complexity analysis, prerequisites and advantages. 
+
 Check it out here: https://nasir-syed.github.io/VISN-algorithm-visualiser/
+
 ---
 
 ## Key Features 
